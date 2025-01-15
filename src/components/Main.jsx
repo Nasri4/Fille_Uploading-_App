@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Button from "./Button";
 
 function SmallSocial() {
@@ -7,14 +7,31 @@ function SmallSocial() {
   const [chosenFile, setChosenFile] = useState(null);
   const [fileName, setFileName] = useState("No file chosen");
   const [posts, setPosts] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const storedPosts = localStorage.getItem("posts");
+    if (storedPosts) {
+      setPosts(JSON.parse(storedPosts));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("posts", JSON.stringify(posts));
+  }, [posts]);
 
   const toggleForm = () => {
     setShowForm((prev) => !prev);
   };
 
   const handleFileChange = (event) => {
-    setChosenFile(event.target.files[0]);
-    setFileName(event.target.files[0].name);
+    if (event.target.files.length > 0) {
+      setChosenFile(event.target.files[0]);
+      setFileName(event.target.files[0].name);
+    } else {
+      setChosenFile(null);
+      setFileName("No file chosen");
+    }
   };
 
   const handleTitleChange = (event) => {
@@ -23,6 +40,10 @@ function SmallSocial() {
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    if (!title || !chosenFile) {
+      setError("Please fill in all fields");
+      return;
+    }
     const newPost = {
       title: title,
       file: chosenFile,
@@ -32,6 +53,12 @@ function SmallSocial() {
     setTitle("");
     setChosenFile(null);
     setFileName("No file chosen");
+    setError(null);
+    setShowForm(false); // Close the form after submitting
+  };
+
+  const handleDeletePost = (index) => {
+    setPosts((prevPosts) => prevPosts.filter((post, i) => i !== index));
   };
 
   return (
@@ -61,6 +88,7 @@ function SmallSocial() {
               />
               <span className="ml-2 text-gray-500">{fileName}</span>
             </div>
+            {error && <p className="text-red-500 mb-4">{error}</p>}
             <button
               className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               onClick={handleSubmit}
@@ -84,6 +112,12 @@ function SmallSocial() {
               alt={post.fileName}
               className="w-full h-64 object-cover mb-4"
             />
+            <button
+              className="w-full py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              onClick={() => handleDeletePost(index)}
+            >
+              Delete
+            </button>
           </div>
         ))}
       </div>
